@@ -13,6 +13,11 @@
 			"binding": "bucket",
 			"bucket_name": "r2-explorer-bucket",
 			"preview_bucket_name": "r2-explorer-bucket"
+		},
+		{
+			"binding": "EMAIL_BUCKET",
+			"bucket_name": "r2-email-storage-bucket",
+			"preview_bucket_name": "r2-email-storage-bucket"
 		}
 	],
 	"observability": {
