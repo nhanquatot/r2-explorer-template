@@ -2,26 +2,40 @@ import { R2Explorer } from 'r2-explorer';
 
 export interface Env {
   MY_BUCKET: R2Bucket;
-  [key: string]: any; // Cho phép đọc mọi Variable Name bất kỳ từ Dashboard
+  [key: string]: any;
 }
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    // 1. Tự động lấy tất cả các Variable Name và Value trên Cloudflare Dashboard
-    // Lọc bỏ biến MY_BUCKET (và các biến hệ thống nếu có)
-    const users = Object.entries(env)
-      .filter(([key]) => key !== 'MY_BUCKET' && !key.startsWith('CF_'))
-      .map(([username, password]) => ({
-        username: username,          // Lấy TÊN BIẾN (Variable Name) làm Username (ví dụ: truong)
-        password: String(password),  // Lấy GIÁ TRỊ (Value) làm Password (ví dụ: 123456)
-      }));
+    // Lấy danh sách tài khoản từ Variables trên Cloudflare Dashboard
+    const userList: { username: string; password: string }[] = [];
 
-    // 2. Nếu không có biến nào được tạo trên Dashboard thì dùng tài khoản mặc định
-    const basicAuth = users.length > 0 ? users : { username: 'admin', password: 'defaultpassword' };
+    for (const [key, val] of Object.entries(env)) {
+      // Bỏ qua R2 Bucket và các biến mặc định của hệ thống Cloudflare
+      if (key === 'MY_BUCKET' || key.startsWith('CF_') || key.startsWith('WRANGLER_')) {
+        continue;
+      }
+      
+      const cleanUsername = String(key).trim();
+      const cleanPassword = String(val).trim();
+
+      if (cleanUsername && cleanPassword) {
+        // Thêm tài khoản dạng chữ thường và giữ nguyên bản
+        userList.push({ username: cleanUsername, password: cleanPassword });
+        if (cleanUsername !== cleanUsername.toLowerCase()) {
+          userList.push({ username: cleanUsername.toLowerCase(), password: cleanPassword });
+        }
+      }
+    }
+
+    // Nếu không tìm thấy biến nào trên Dashboard, dùng nick mặc định này
+    const finalAuth = userList.length > 0 
+      ? userList 
+      : { username: 'admin', password: '123' };
 
     return R2Explorer({
       readonly: false,
-      basicAuth: basicAuth,
+      basicAuth: finalAuth,
     }).fetch(request, env, ctx);
   },
 };
