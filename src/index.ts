@@ -1,10 +1,19 @@
-import { R2Explorer } from "r2-explorer";
+import { R2Explorer } from 'r2-explorer';
 
-export default R2Explorer({
-	// Set to false to allow users to upload files
-	readonly: true,
+export interface Env {
+  MY_BUCKET: R2Bucket;
+  USERNAME?: string;
+  PASSWORD?: string;
+}
 
-	// Learn more how to secure your R2 Explorer instance:
-	// https://r2explorer.com/getting-started/security/
-	// cfAccessTeamName: "my-team-name",
-});
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    return R2Explorer({
+      readonly: false,
+      basicAuth: {
+        username: env.USERNAME || 'truong',
+        password: env.PASSWORD || 'change_me_in_dashboard',
+      },
+    }).fetch(request, env, ctx);
+  },
+};
